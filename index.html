@@ -1,0 +1,965 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>🌍 2026 World Cup – Interactive Globe</title>
+
+    <!-- ---- SEO / social ---- -->
+    <meta name="description" content="An interactive 3D globe of the 48 nations competing at the 2026 FIFA World Cup in Canada, Mexico and the USA. Explore qualified teams by confederation and group." />
+    <meta name="theme-color" content="#0a0a20" />
+    <link rel="canonical" href="https://bpulidodtx-7575.github.io/globe-wc-2026/" />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="2026 FIFA World Cup – Interactive Globe" />
+    <meta property="og:description" content="Spin the globe to explore all 48 nations of the 2026 FIFA World Cup, colour-coded by confederation with group details." />
+    <meta property="og:url" content="https://bpulidodtx-7575.github.io/globe-wc-2026/" />
+    <meta property="og:image" content="https://bpulidodtx-7575.github.io/globe-wc-2026/preview.png" />
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="2026 FIFA World Cup – Interactive Globe" />
+    <meta name="twitter:description" content="An interactive 3D globe of all 48 nations of the 2026 FIFA World Cup." />
+
+    <!-- ---- Inline SVG favicon (no extra file) ---- -->
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%8F%86%3C/text%3E%3C/svg%3E" />
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            overflow: hidden;
+            background: radial-gradient(ellipse at center, #0a0a20 0%, #000000 100%);
+            font-family: 'Segoe UI', 'Poppins', system-ui, sans-serif;
+            color: #fff;
+            user-select: none;
+        }
+        #globe-container {
+            width: 100vw;
+            height: 100vh;
+            display: block;
+            position: relative;
+        }
+
+        /* ---- Accessibility helpers ---- */
+        .sr-only {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+            border: 0;
+        }
+        :focus-visible {
+            outline: 2px solid #f4b400;
+            outline-offset: 2px;
+            border-radius: 6px;
+        }
+
+        /* ---- Title ---- */
+        #title {
+            position: absolute;
+            top: 24px;
+            left: 50%;
+            transform: translateX(-50%);
+            text-align: center;
+            pointer-events: none;
+            z-index: 10;
+            text-shadow: 0 0 50px rgba(0, 0, 0, 0.95), 0 0 100px rgba(0, 0, 0, 0.7);
+        }
+        #title h1 {
+            font-size: clamp(1.4rem, 4vw, 3.4rem);
+            font-weight: 800;
+            letter-spacing: 0.04em;
+            background: linear-gradient(135deg, #f9d976, #f39c12, #e67e22);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            filter: drop-shadow(0 2px 24px rgba(243, 156, 18, 0.25));
+        }
+        #title p {
+            font-size: clamp(0.65rem, 1vw, 1rem);
+            color: rgba(255, 255, 255, 0.6);
+            letter-spacing: 0.25em;
+            margin-top: 2px;
+            font-weight: 300;
+            text-transform: uppercase;
+            -webkit-text-fill-color: rgba(255, 255, 255, 0.6);
+        }
+
+        /* ---- Search ---- */
+        #search-wrap {
+            position: absolute;
+            top: 22px;
+            right: 22px;
+            z-index: 15;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 40px;
+            padding: 8px 14px;
+            box-shadow: 0 8px 40px rgba(0, 0, 0, 0.6);
+            transition: border-color 0.25s ease;
+        }
+        #search-wrap.error {
+            border-color: rgba(231, 91, 106, 0.8);
+        }
+        #search-wrap .icon {
+            font-size: 0.9rem;
+            opacity: 0.6;
+        }
+        #search {
+            background: transparent;
+            border: none;
+            outline: none;
+            color: #fff;
+            font-size: 0.85rem;
+            font-family: inherit;
+            width: clamp(120px, 22vw, 200px);
+            letter-spacing: 0.02em;
+        }
+        #search::placeholder {
+            color: rgba(255, 255, 255, 0.4);
+        }
+
+        /* ---- Legend ---- */
+        #legend {
+            position: absolute;
+            bottom: 28px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            padding: 10px 24px;
+            border-radius: 50px;
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            z-index: 10;
+            pointer-events: none;
+            flex-wrap: wrap;
+            justify-content: center;
+            max-width: min(94vw, 920px);
+            box-shadow: 0 8px 50px rgba(0, 0, 0, 0.7);
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: clamp(0.6rem, 0.9vw, 0.82rem);
+            font-weight: 400;
+            color: rgba(255, 255, 255, 0.85);
+            letter-spacing: 0.02em;
+            white-space: nowrap;
+        }
+        .legend-dot {
+            width: 13px;
+            height: 13px;
+            border-radius: 50%;
+            flex-shrink: 0;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .legend-count {
+            font-size: clamp(0.55rem, 0.75vw, 0.72rem);
+            color: rgba(255, 255, 255, 0.4);
+            font-weight: 300;
+            padding-left: 1px;
+        }
+        .legend-hint {
+            font-weight: 300;
+            color: rgba(255, 255, 255, 0.3);
+            font-size: 0.65rem;
+        }
+        .legend-divider {
+            width: 1px;
+            height: 22px;
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        /* ---- Tooltip ---- */
+        #tooltip {
+            position: absolute;
+            padding: 6px 18px 6px 14px;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(12px);
+            border-radius: 30px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: #fff;
+            pointer-events: none;
+            z-index: 20;
+            opacity: 0;
+            transition: opacity 0.2s ease;
+            border: 1px solid rgba(255, 215, 0, 0.15);
+            box-shadow: 0 8px 40px rgba(0, 0, 0, 0.6);
+            letter-spacing: 0.02em;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        #tooltip.visible {
+            opacity: 1;
+        }
+        #tooltip .flag {
+            font-size: 1.1rem;
+        }
+
+        /* ---- Detail card ---- */
+        #card {
+            position: absolute;
+            left: 22px;
+            bottom: 96px;
+            z-index: 25;
+            width: min(320px, 84vw);
+            background: rgba(8, 10, 22, 0.82);
+            backdrop-filter: blur(18px);
+            -webkit-backdrop-filter: blur(18px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 18px 20px;
+            box-shadow: 0 12px 60px rgba(0, 0, 0, 0.7);
+            opacity: 0;
+            transform: translateY(12px);
+            pointer-events: none;
+            transition: opacity 0.25s ease, transform 0.25s ease;
+        }
+        #card.visible {
+            opacity: 1;
+            transform: translateY(0);
+            pointer-events: auto;
+        }
+        #card .card-head {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+        #card .card-flag {
+            font-size: 2rem;
+            line-height: 1;
+        }
+        #card .card-name {
+            font-size: 1.15rem;
+            font-weight: 700;
+            letter-spacing: 0.01em;
+        }
+        #card .card-close {
+            margin-left: auto;
+            background: rgba(255, 255, 255, 0.08);
+            border: none;
+            color: #fff;
+            width: 26px;
+            height: 26px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 0.9rem;
+            line-height: 1;
+            flex-shrink: 0;
+        }
+        #card .card-close:hover {
+            background: rgba(255, 255, 255, 0.18);
+        }
+        #card .card-row {
+            font-size: 0.82rem;
+            color: rgba(255, 255, 255, 0.75);
+            margin-top: 6px;
+            display: flex;
+            gap: 8px;
+        }
+        #card .card-row .label {
+            color: rgba(255, 255, 255, 0.4);
+            min-width: 92px;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            font-size: 0.66rem;
+            padding-top: 2px;
+        }
+        #card .card-badge {
+            display: inline-block;
+            padding: 2px 9px;
+            border-radius: 30px;
+            font-size: 0.72rem;
+            font-weight: 600;
+            color: #07101f;
+        }
+        #card .card-mates {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px 12px;
+        }
+        #card .card-mate {
+            font-size: 0.78rem;
+            color: rgba(255, 255, 255, 0.7);
+            white-space: nowrap;
+        }
+
+        /* ---- Loading ---- */
+        #loading {
+            position: fixed;
+            inset: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+            background: radial-gradient(ellipse at center, #0a0a20 0%, #000 100%);
+            transition: opacity 0.9s ease;
+            pointer-events: none;
+        }
+        #loading.hidden {
+            opacity: 0;
+        }
+        #loading .spinner {
+            width: 52px;
+            height: 52px;
+            border-radius: 50%;
+            border: 3px solid rgba(255, 215, 0, 0.08);
+            border-top-color: #f39c12;
+            animation: spin 0.9s linear infinite;
+        }
+        #loading p {
+            margin-top: 20px;
+            font-size: 0.9rem;
+            color: rgba(255, 255, 255, 0.3);
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+            font-weight: 300;
+        }
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* ---- Responsive ---- */
+        @media (max-width: 640px) {
+            #legend {
+                bottom: 14px;
+                padding: 8px 14px;
+                gap: 8px 12px;
+                border-radius: 22px;
+                width: 94%;
+            }
+            .legend-item {
+                font-size: 0.6rem;
+                gap: 5px;
+            }
+            .legend-dot {
+                width: 9px;
+                height: 9px;
+            }
+            .legend-divider,
+            .legend-hint {
+                display: none;
+            }
+            #title {
+                top: 12px;
+            }
+            #search-wrap {
+                top: 60px;
+                right: 50%;
+                transform: translateX(50%);
+                padding: 6px 12px;
+            }
+            #search {
+                width: 46vw;
+            }
+            #card {
+                left: 50%;
+                transform: translateX(-50%) translateY(12px);
+                bottom: 84px;
+            }
+            #card.visible {
+                transform: translateX(-50%) translateY(0);
+            }
+            #tooltip {
+                font-size: 0.75rem;
+                padding: 4px 12px 4px 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Loading Screen -->
+    <div id="loading" role="status" aria-live="polite">
+        <div class="spinner"></div>
+        <p>Loading Globe …</p>
+    </div>
+
+    <!-- Title -->
+    <header id="title">
+        <h1>🏆 2026 FIFA World Cup</h1>
+        <p>48 nations · one dream</p>
+    </header>
+
+    <!-- Search -->
+    <div id="search-wrap">
+        <span class="icon" aria-hidden="true">🔍</span>
+        <input id="search" type="search" autocomplete="off" spellcheck="false"
+               placeholder="Search a nation…" aria-label="Search for a qualified nation" />
+    </div>
+
+    <!-- Tooltip (live region for screen readers) -->
+    <div id="tooltip" role="status" aria-live="polite"></div>
+
+    <!-- Detail card -->
+    <aside id="card" role="dialog" aria-label="Nation details" aria-hidden="true"></aside>
+
+    <!-- Legend (populated by JS) -->
+    <div id="legend" aria-hidden="true"></div>
+
+    <!-- Globe Container -->
+    <main id="globe-container" aria-label="Interactive 3D globe of 2026 World Cup nations. Drag to rotate, scroll to zoom, press R or Space to toggle auto-rotation."></main>
+
+    <script>
+        // ============================================================
+        //  0.  RESILIENT DEPENDENCY LOADER
+        //     Loads three.js, globe.gl and topojson-client, falling
+        //     back to an alternate CDN if the primary one is blocked.
+        //     (SRI hashes are intentionally omitted: they can't be
+        //      verified in this build environment and a wrong hash
+        //      would block loading outright — the multi-CDN fallback
+        //      provides the resilience instead.)
+        // ============================================================
+        const DEPS = [
+            {
+                name: 'THREE',
+                ready: () => window.THREE,
+                urls: [
+                    'https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js',
+                    'https://unpkg.com/three@0.128.0/build/three.min.js',
+                ],
+            },
+            {
+                name: 'Globe',
+                ready: () => window.Globe,
+                urls: [
+                    'https://cdn.jsdelivr.net/npm/globe.gl@2.24.0/dist/globe.gl.min.js',
+                    'https://unpkg.com/globe.gl@2.24.0/dist/globe.gl.min.js',
+                ],
+            },
+            {
+                name: 'topojson',
+                ready: () => window.topojson,
+                urls: [
+                    'https://cdn.jsdelivr.net/npm/topojson-client@3.1.0/dist/topojson-client.min.js',
+                    'https://unpkg.com/topojson-client@3.1.0/dist/topojson-client.min.js',
+                ],
+            },
+        ];
+
+        function loadScript(url) {
+            return new Promise((resolve, reject) => {
+                const s = document.createElement('script');
+                s.src = url;
+                s.crossOrigin = 'anonymous';
+                s.onload = resolve;
+                s.onerror = () => reject(new Error(url));
+                document.head.appendChild(s);
+            });
+        }
+
+        async function ensureDep(dep) {
+            if (dep.ready()) return;
+            for (const url of dep.urls) {
+                try {
+                    await loadScript(url);
+                    if (dep.ready()) return;
+                } catch (e) {
+                    /* try next CDN */
+                }
+            }
+            throw new Error(`Failed to load dependency: ${dep.name}`);
+        }
+
+        function showFatal(msg) {
+            const el = document.getElementById('loading');
+            el.classList.remove('hidden');
+            el.innerHTML = `
+                <p style="color:rgba(255,200,100,0.85);text-align:center;max-width:320px;line-height:1.6;">
+                    ⚠️ ${msg}<br>
+                    <span style="font-size:0.75rem;opacity:0.5;">Please check your connection and refresh.</span>
+                </p>`;
+        }
+
+        (async function bootstrap() {
+            try {
+                for (const dep of DEPS) await ensureDep(dep);
+                init();
+            } catch (err) {
+                console.error('❌', err);
+                showFatal('Could not load the 3D libraries.');
+            }
+        })();
+
+        // ============================================================
+        //  1.  WORLD CUP 2026 – QUALIFIED NATIONS (48)
+        //     Source: 2026 FIFA World Cup final draw (5 Dec 2025).
+        //     Confederations, groups and ISO codes verified against
+        //     Wikipedia / FIFA. Last verified: 2026-06-23.
+        //
+        //     Each team carries:
+        //       name   – display name
+        //       a2     – ISO 3166-1 alpha-2 (used to derive the flag)
+        //       iso    – ISO 3166-1 numeric (matched against the map
+        //                polygon ids — robust to name spellings)
+        //       confed – confederation key (see CONFED below)
+        //       group  – final-draw group letter
+        //       host   – host nation flag (optional)
+        //       flag   – emoji override (England/Scotland subdivisions)
+        //       sub    – true if it shares a map polygon (GB nations)
+        //       alias  – extra search terms (optional)
+        // ============================================================
+        const TEAMS = [
+            // —— CONCACAF (hosts + 3) ——
+            { name: 'United States', a2: 'US', iso: '840', confed: 'CONCACAF', group: 'D', host: true, alias: ['usa', 'america', 'united states of america'] },
+            { name: 'Mexico',        a2: 'MX', iso: '484', confed: 'CONCACAF', group: 'A', host: true },
+            { name: 'Canada',        a2: 'CA', iso: '124', confed: 'CONCACAF', group: 'B', host: true },
+            { name: 'Panama',        a2: 'PA', iso: '591', confed: 'CONCACAF', group: 'L' },
+            { name: 'Curaçao',       a2: 'CW', iso: '531', confed: 'CONCACAF', group: 'E', alias: ['curacao'] },
+            { name: 'Haiti',         a2: 'HT', iso: '332', confed: 'CONCACAF', group: 'C' },
+
+            // —— CONMEBOL (6) ——
+            { name: 'Argentina', a2: 'AR', iso: '32',  confed: 'CONMEBOL', group: 'J' },
+            { name: 'Brazil',    a2: 'BR', iso: '76',  confed: 'CONMEBOL', group: 'C' },
+            { name: 'Uruguay',   a2: 'UY', iso: '858', confed: 'CONMEBOL', group: 'H' },
+            { name: 'Colombia',  a2: 'CO', iso: '170', confed: 'CONMEBOL', group: 'K' },
+            { name: 'Ecuador',   a2: 'EC', iso: '218', confed: 'CONMEBOL', group: 'E' },
+            { name: 'Paraguay',  a2: 'PY', iso: '600', confed: 'CONMEBOL', group: 'D' },
+
+            // —— UEFA (16) ——
+            { name: 'Spain',                  a2: 'ES', iso: '724', confed: 'UEFA', group: 'H' },
+            { name: 'France',                 a2: 'FR', iso: '250', confed: 'UEFA', group: 'I' },
+            { name: 'Germany',                a2: 'DE', iso: '276', confed: 'UEFA', group: 'E' },
+            { name: 'Portugal',               a2: 'PT', iso: '620', confed: 'UEFA', group: 'K' },
+            { name: 'Netherlands',            a2: 'NL', iso: '528', confed: 'UEFA', group: 'F' },
+            { name: 'Belgium',                a2: 'BE', iso: '56',  confed: 'UEFA', group: 'G' },
+            { name: 'Croatia',                a2: 'HR', iso: '191', confed: 'UEFA', group: 'L' },
+            { name: 'Switzerland',            a2: 'CH', iso: '756', confed: 'UEFA', group: 'B' },
+            { name: 'Austria',                a2: 'AT', iso: '40',  confed: 'UEFA', group: 'J' },
+            { name: 'Sweden',                 a2: 'SE', iso: '752', confed: 'UEFA', group: 'F' },
+            { name: 'Norway',                 a2: 'NO', iso: '578', confed: 'UEFA', group: 'I' },
+            { name: 'Czechia',                a2: 'CZ', iso: '203', confed: 'UEFA', group: 'A', alias: ['czech republic'] },
+            { name: 'Türkiye',                a2: 'TR', iso: '792', confed: 'UEFA', group: 'D', alias: ['turkey', 'turkiye'] },
+            { name: 'Bosnia and Herzegovina', a2: 'BA', iso: '70',  confed: 'UEFA', group: 'B', alias: ['bosnia'] },
+            // England & Scotland share the United Kingdom map polygon (id 826)
+            { name: 'England',  a2: 'GB', iso: null, confed: 'UEFA', group: 'L', sub: true, flag: '🏴\u{E0067}\u{E0062}\u{E0065}\u{E006E}\u{E0067}\u{E007F}' },
+            { name: 'Scotland', a2: 'GB', iso: null, confed: 'UEFA', group: 'C', sub: true, flag: '🏴\u{E0067}\u{E0062}\u{E0073}\u{E0063}\u{E0074}\u{E007F}' },
+
+            // —— AFC (9) ——
+            { name: 'Japan',        a2: 'JP', iso: '392', confed: 'AFC', group: 'F' },
+            { name: 'IR Iran',      a2: 'IR', iso: '364', confed: 'AFC', group: 'G', alias: ['iran'] },
+            { name: 'South Korea',  a2: 'KR', iso: '410', confed: 'AFC', group: 'A', alias: ['korea', 'korea republic', 'republic of korea'] },
+            { name: 'Australia',    a2: 'AU', iso: '36',  confed: 'AFC', group: 'D' },
+            { name: 'Saudi Arabia', a2: 'SA', iso: '682', confed: 'AFC', group: 'H' },
+            { name: 'Qatar',        a2: 'QA', iso: '634', confed: 'AFC', group: 'B' },
+            { name: 'Uzbekistan',   a2: 'UZ', iso: '860', confed: 'AFC', group: 'K' },
+            { name: 'Jordan',       a2: 'JO', iso: '400', confed: 'AFC', group: 'J' },
+            { name: 'Iraq',         a2: 'IQ', iso: '368', confed: 'AFC', group: 'I' },
+
+            // —— CAF (10) ——
+            { name: 'Morocco',       a2: 'MA', iso: '504', confed: 'CAF', group: 'C' },
+            { name: 'Senegal',       a2: 'SN', iso: '686', confed: 'CAF', group: 'I' },
+            { name: 'Egypt',         a2: 'EG', iso: '818', confed: 'CAF', group: 'G' },
+            { name: 'Algeria',       a2: 'DZ', iso: '12',  confed: 'CAF', group: 'J' },
+            { name: 'Ghana',         a2: 'GH', iso: '288', confed: 'CAF', group: 'L' },
+            { name: "Côte d'Ivoire", a2: 'CI', iso: '384', confed: 'CAF', group: 'E', alias: ['ivory coast', 'cote d ivoire'] },
+            { name: 'South Africa',  a2: 'ZA', iso: '710', confed: 'CAF', group: 'A' },
+            { name: 'Tunisia',       a2: 'TN', iso: '788', confed: 'CAF', group: 'F' },
+            { name: 'Cabo Verde',    a2: 'CV', iso: '132', confed: 'CAF', group: 'H', alias: ['cape verde'] },
+            { name: 'DR Congo',      a2: 'CD', iso: '180', confed: 'CAF', group: 'K', alias: ['congo', 'democratic republic of the congo', 'dr congo'] },
+
+            // —— OFC (1) ——
+            { name: 'New Zealand', a2: 'NZ', iso: '554', confed: 'OFC', group: 'G' },
+        ];
+
+        // Confederation metadata: colour + display label
+        const CONFED = {
+            UEFA:     { color: '#4a90e2', label: 'UEFA' },
+            CONMEBOL: { color: '#f4b400', label: 'CONMEBOL' },
+            CONCACAF: { color: '#34c759', label: 'CONCACAF' },
+            CAF:      { color: '#e8833a', label: 'CAF' },
+            AFC:      { color: '#ec5b6a', label: 'AFC' },
+            OFC:      { color: '#27c5cf', label: 'OFC' },
+        };
+
+        // ---- Derived helpers ----
+        function flagEmoji(a2) {
+            return a2.toUpperCase().replace(/./g, (c) =>
+                String.fromCodePoint(127397 + c.charCodeAt(0)));
+        }
+        function teamFlag(t) {
+            return t.flag || flagEmoji(t.a2);
+        }
+
+        // Build lookup tables. Polygons are matched primarily by ISO
+        // numeric id, with a normalized-name fallback to absorb dataset
+        // spelling variants ("Bosnia and Herz.", "Dem. Rep. Congo", …).
+        const byId = {};
+        const byName = {};
+        const groupsIndex = {};       // group letter -> [team, …]
+        const addName = (key, t) => { if (key) byName[key.trim().toLowerCase()] = t; };
+
+        TEAMS.forEach((t) => {
+            if (t.iso) byId[String(Number(t.iso))] = t;
+            if (!t.sub) {                // GB sub-nations resolve via the UK polygon
+                addName(t.name, t);
+                (t.alias || []).forEach((a) => addName(a, t));
+            }
+            (groupsIndex[t.group] = groupsIndex[t.group] || []).push(t);
+        });
+
+        // United Kingdom polygon represents both England and Scotland.
+        const UK_MEMBERS = TEAMS.filter((t) => t.sub);
+        const GEO_ALIASES = {           // dataset name -> canonical team name
+            'united states of america': 'United States',
+            'dem. rep. congo': 'DR Congo',
+            'democratic republic of the congo': 'DR Congo',
+            'bosnia and herz.': 'Bosnia and Herzegovina',
+            'czech rep.': 'Czechia',
+            'turkey': 'Türkiye',
+            'republic of korea': 'South Korea',
+            'korea': 'South Korea',
+            'ivory coast': "Côte d'Ivoire",
+            'cape verde': 'Cabo Verde',
+            'curacao': 'Curaçao',
+        };
+
+        // Resolve a map feature to a "display unit" (one or more teams),
+        // or null when the country is not competing.
+        function resolveUnit(feat) {
+            const id = feat.id != null ? String(Number(feat.id)) : '';
+            const raw = (feat.properties && feat.properties.name) || '';
+            const key = raw.trim().toLowerCase();
+
+            if (id === '826' || key === 'united kingdom') {
+                return { name: 'United Kingdom', confed: 'UEFA', host: false, members: UK_MEMBERS };
+            }
+            const t = byId[id] || byName[key] || byName[(GEO_ALIASES[key] || '').toLowerCase()];
+            if (!t) return null;
+            return { name: t.name, confed: t.confed, host: !!t.host, members: [t] };
+        }
+
+        // ============================================================
+        //  2.  INIT (called once dependencies are ready)
+        // ============================================================
+        let globe, controls;
+
+        function init() {
+            const container = document.getElementById('globe-container');
+
+            globe = new Globe()
+                .globeImageUrl('https://unpkg.com/three-globe@2.24.8/example/img/earth-blue-marble.jpg')
+                .bumpImageUrl('https://unpkg.com/three-globe@2.24.8/example/img/earth-topology.png')
+                .showGlobe(true)
+                .showAtmosphere(true)
+                .atmosphereColor('#3a6ea5')
+                .atmosphereAltitude(0.18)
+                .showGraticules(true)
+                .graticulesColor('rgba(255,255,255,0.06)')
+                .graticulesDashLength(0.5)
+                .graticulesDashGap(0.3)
+                .backgroundColor('rgba(0,0,0,0)');
+
+            container.appendChild(globe.domElement);
+
+            // ---- Controls ----
+            controls = globe.controls();
+            controls.enableDamping = true;
+            controls.dampingFactor = 0.08;
+            controls.rotateSpeed = 0.5;
+            controls.autoRotate = true;
+            controls.autoRotateSpeed = 0.7;
+            controls.minDistance = 180;
+            controls.maxDistance = 550;
+            controls.enablePan = false;
+
+            buildLegend();
+            addStars();
+            wireSearch();
+            wireKeyboard();
+            wireInteraction();
+            loadData();
+        }
+
+        // ============================================================
+        //  3.  LOAD & RENDER POLYGONS
+        // ============================================================
+        const DATA_URL = 'https://cdn.jsdelivr.net/npm/world-atlas@2/countries-50m.json';
+        const searchIndex = [];        // { unit, lat, lng, terms:[…] }
+
+        // Rough centroid of a GeoJSON geometry (average of all vertices).
+        function centroidOf(geometry) {
+            let x = 0, y = 0, n = 0;
+            const polys = geometry.type === 'Polygon'
+                ? [geometry.coordinates]
+                : geometry.coordinates;
+            polys.forEach((poly) => poly.forEach((ring) => ring.forEach(([lng, lat]) => {
+                x += lng; y += lat; n++;
+            })));
+            return n ? { lng: x / n, lat: y / n } : { lng: 0, lat: 0 };
+        }
+
+        async function loadData() {
+            const loadingEl = document.getElementById('loading');
+
+            // Abort if the data CDN hangs, so we never spin forever.
+            const ctrl = new AbortController();
+            const timer = setTimeout(() => ctrl.abort(), 15000);
+
+            try {
+                const res = await fetch(DATA_URL, { signal: ctrl.signal });
+                clearTimeout(timer);
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                const topology = await res.json();
+                const features = topojson.feature(topology, topology.objects.countries).features;
+
+                // Attach the resolved unit + centroid, and build the search index.
+                const enriched = features.map((feat) => {
+                    const unit = resolveUnit(feat);
+                    if (unit) {
+                        const c = centroidOf(feat.geometry);
+                        unit.lat = c.lat;
+                        unit.lng = c.lng;
+                        const terms = [unit.name, ...unit.members.flatMap((m) => [m.name, ...(m.alias || [])])]
+                            .map((s) => s.toLowerCase());
+                        searchIndex.push({ unit, lat: c.lat, lng: c.lng, terms });
+                    }
+                    return { ...feat, __unit: unit };
+                });
+
+                const capColor = (d) => d.__unit ? CONFED[d.__unit.confed].color : '#14203a';
+
+                globe
+                    .polygonsData(enriched)
+                    .polygonCapColor(capColor)
+                    .polygonSideColor(() => 'rgba(255,255,255,0.04)')
+                    .polygonStrokeColor((d) => {
+                        if (!d.__unit) return 'rgba(255,255,255,0.03)';
+                        return d.__unit.host ? 'rgba(255,215,0,0.65)' : 'rgba(255,255,255,0.22)';
+                    })
+                    .polygonAltitude((d) => {
+                        if (!d.__unit) return 0.006;
+                        return d.__unit.host ? 0.03 : 0.018;
+                    })
+                    .polygonLabel((d) => {
+                        const u = d.__unit;
+                        if (!u) return null;
+                        const flags = u.members.map(teamFlag).join(' ');
+                        return `<div style="font-weight:600;font-size:1.05rem;color:#fff;text-shadow:0 2px 30px rgba(0,0,0,0.95);background:rgba(0,0,0,0.7);backdrop-filter:blur(10px);padding:6px 16px;border-radius:30px;border:1px solid rgba(255,215,0,0.15);letter-spacing:0.02em;">
+                                    ${flags} ${u.name}
+                                </div>`;
+                    })
+                    .onPolygonHover((d, prevD, event) => {
+                        const tooltip = document.getElementById('tooltip');
+                        const u = d && d.__unit;
+                        if (!u) {
+                            tooltip.classList.remove('visible');
+                            globe.domElement.style.cursor = 'default';
+                            return;
+                        }
+                        const flags = u.members.map(teamFlag).join(' ');
+                        tooltip.innerHTML = `<span class="flag">${flags}</span> ${u.name}`;
+                        tooltip.classList.add('visible');
+                        globe.domElement.style.cursor = 'pointer';
+                        positionTooltip(tooltip, event);
+                    })
+                    .onPolygonClick((d) => {
+                        if (d && d.__unit) openCard(d.__unit);
+                    });
+
+                loadingEl.classList.add('hidden');
+                console.log(`✅ 2026 World Cup: ${TEAMS.length} nations rendered.`);
+            } catch (err) {
+                clearTimeout(timer);
+                console.error('❌ Globe load error:', err);
+                showFatal('Could not load the world map data.');
+                setTimeout(() => { loadingEl.classList.add('hidden'); }, 4000);
+            }
+        }
+
+        function positionTooltip(tooltip, event) {
+            const x = (event && (event.clientX || event.pageX)) || 0;
+            const y = (event && (event.clientY || event.pageY)) || 0;
+            let left = x + 18;
+            let top = y - 12;
+            const tw = tooltip.offsetWidth || 140;
+            const th = tooltip.offsetHeight || 40;
+            if (left + tw + 20 > window.innerWidth) left = x - tw - 18;
+            if (top + th + 20 > window.innerHeight) top = y - th - 10;
+            if (top < 10) top = 10;
+            tooltip.style.left = left + 'px';
+            tooltip.style.top = top + 'px';
+        }
+
+        // ============================================================
+        //  4.  DETAIL CARD
+        // ============================================================
+        function openCard(unit) {
+            const card = document.getElementById('card');
+            const confed = CONFED[unit.confed];
+
+            const memberRows = unit.members.map((m) => {
+                const mates = (groupsIndex[m.group] || [])
+                    .filter((x) => x.name !== m.name)
+                    .map((x) => `<span class="card-mate">${teamFlag(x)} ${x.name}</span>`)
+                    .join('');
+                const heading = unit.members.length > 1
+                    ? `<div class="card-row"><span class="label">${teamFlag(m)} ${m.name}</span></div>`
+                    : '';
+                return `
+                    ${heading}
+                    <div class="card-row">
+                        <span class="label">Group ${m.group}</span>
+                        <span class="card-mates">${mates}</span>
+                    </div>`;
+            }).join('');
+
+            const headFlags = unit.members.map(teamFlag).join(' ');
+            card.innerHTML = `
+                <div class="card-head">
+                    <span class="card-flag">${headFlags}</span>
+                    <span class="card-name">${unit.name}</span>
+                    <button class="card-close" aria-label="Close details">✕</button>
+                </div>
+                <div class="card-row">
+                    <span class="label">Confederation</span>
+                    <span class="card-badge" style="background:${confed.color};">${confed.label}</span>
+                </div>
+                ${memberRows}`;
+            card.classList.add('visible');
+            card.setAttribute('aria-hidden', 'false');
+            card.querySelector('.card-close').addEventListener('click', closeCard);
+        }
+
+        function closeCard() {
+            const card = document.getElementById('card');
+            card.classList.remove('visible');
+            card.setAttribute('aria-hidden', 'true');
+        }
+
+        // ============================================================
+        //  5.  LEGEND (per-confederation swatches with counts)
+        // ============================================================
+        function buildLegend() {
+            const counts = {};
+            TEAMS.forEach((t) => { counts[t.confed] = (counts[t.confed] || 0) + 1; });
+
+            const items = Object.keys(CONFED).map((key) => {
+                const c = CONFED[key];
+                return `<span class="legend-item">
+                            <span class="legend-dot" style="background:${c.color};"></span>
+                            ${c.label}<span class="legend-count">(${counts[key] || 0})</span>
+                        </span>`;
+            }).join('<span class="legend-divider"></span>');
+
+            document.getElementById('legend').innerHTML =
+                items +
+                '<span class="legend-divider"></span>' +
+                '<span class="legend-item legend-hint">🖱 Drag · Scroll · ⌨ R/Space</span>';
+        }
+
+        // ============================================================
+        //  6.  SEARCH
+        // ============================================================
+        function flyTo(lat, lng) {
+            controls.autoRotate = false;
+            globe.pointOfView({ lat, lng, altitude: 1.7 }, 1200);
+            clearTimeout(window._rotateTimer);
+            window._rotateTimer = setTimeout(() => { controls.autoRotate = true; }, 6000);
+        }
+
+        function wireSearch() {
+            const input = document.getElementById('search');
+            const wrap = document.getElementById('search-wrap');
+
+            const run = () => {
+                const q = input.value.trim().toLowerCase();
+                if (!q) return;
+                // Prefer a prefix match, otherwise any substring match.
+                const hit = searchIndex.find((e) => e.terms.some((t) => t.startsWith(q)))
+                    || searchIndex.find((e) => e.terms.some((t) => t.includes(q)));
+                if (hit) {
+                    flyTo(hit.lat, hit.lng);
+                    openCard(hit.unit);
+                    wrap.classList.remove('error');
+                } else {
+                    wrap.classList.add('error');
+                    setTimeout(() => wrap.classList.remove('error'), 1000);
+                }
+            };
+
+            input.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') { e.preventDefault(); run(); }
+                if (e.key === 'Escape') { input.value = ''; input.blur(); }
+            });
+        }
+
+        // ============================================================
+        //  7.  STARS BACKGROUND
+        // ============================================================
+        function addStars() {
+            const scene = globe.scene();
+            if (!scene) return;
+            const starGeo = new THREE.BufferGeometry();
+            const count = 2200;
+            const pos = new Float32Array(count * 3);
+            for (let i = 0; i < count * 3; i++) {
+                pos[i] = (Math.random() - 0.5) * 2400;
+            }
+            starGeo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+            const starMat = new THREE.PointsMaterial({
+                color: 0x8899bb,
+                size: 0.3,
+                transparent: true,
+                opacity: 0.5,
+                blending: THREE.AdditiveBlending,
+                sizeAttenuation: true,
+            });
+            scene.add(new THREE.Points(starGeo, starMat));
+        }
+
+        // ============================================================
+        //  8.  KEYBOARD + INTERACTION
+        // ============================================================
+        function wireKeyboard() {
+            document.addEventListener('keydown', (e) => {
+                const typing = e.target && /^(INPUT|TEXTAREA)$/.test(e.target.tagName);
+                if (e.key === 'Escape') { closeCard(); return; }
+                if (typing) return;
+                if (e.key === 'r' || e.key === 'R' || e.key === ' ') {
+                    e.preventDefault();
+                    controls.autoRotate = !controls.autoRotate;
+                }
+            });
+        }
+
+        function wireInteraction() {
+            // Pause auto-rotation while the user interacts.
+            const pause = () => {
+                controls.autoRotate = false;
+                clearTimeout(window._rotateTimer);
+                window._rotateTimer = setTimeout(() => { controls.autoRotate = true; }, 4000);
+            };
+            globe.domElement.addEventListener('mousedown', pause);
+            globe.domElement.addEventListener('touchstart', pause, { passive: true });
+
+            window.addEventListener('resize', () => {
+                globe.width(window.innerWidth).height(window.innerHeight);
+            });
+        }
+    </script>
+</body>
+</html>
