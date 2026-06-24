@@ -605,8 +605,11 @@
         }
 
         // Build lookup tables. Polygons are matched primarily by ISO
-        // numeric id, with a normalized-name fallback to absorb dataset
-        // spelling variants ("Bosnia and Herz.", "Dem. Rep. Congo", …).
+        // numeric id, with a canonical-name + GEO_ALIASES fallback to absorb
+        // dataset spelling variants ("Bosnia and Herz.", "Dem. Rep. Congo", …).
+        // Note: the loose `alias` arrays are NOT used for polygon matching —
+        // they feed the search index only. (Matching on them would mislabel
+        // e.g. Republic of the Congo as "DR Congo".)
         const byId = {};
         const byName = {};
         const groupsIndex = {};       // group letter -> [team, …]
@@ -614,10 +617,7 @@
 
         TEAMS.forEach((t) => {
             if (t.iso) byId[String(Number(t.iso))] = t;
-            if (!t.sub) {                // GB sub-nations resolve via the UK polygon
-                addName(t.name, t);
-                (t.alias || []).forEach((a) => addName(a, t));
-            }
+            if (!t.sub) addName(t.name, t);   // GB sub-nations resolve via the UK polygon
             (groupsIndex[t.group] = groupsIndex[t.group] || []).push(t);
         });
 
