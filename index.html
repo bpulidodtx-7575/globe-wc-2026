@@ -658,12 +658,12 @@
         // ============================================================
         //  2.  INIT (called once dependencies are ready)
         // ============================================================
-        let globe, controls;
+        let globe, controls, globeEl;
 
         function init() {
             const container = document.getElementById('globe-container');
 
-            globe = new Globe()
+            globe = Globe()
                 .globeImageUrl('vendor/img/earth-blue-marble.jpg')
                 .bumpImageUrl('vendor/img/earth-topology.png')
                 .showGlobe(true)
@@ -671,12 +671,10 @@
                 .atmosphereColor('#3a6ea5')
                 .atmosphereAltitude(0.18)
                 .showGraticules(true)
-                .graticulesColor('rgba(255,255,255,0.06)')
-                .graticulesDashLength(0.5)
-                .graticulesDashGap(0.3)
                 .backgroundColor('rgba(0,0,0,0)');
 
-            container.appendChild(globe.domElement);
+            globe(container);
+            globeEl = container;
 
             // ---- Controls ----
             controls = globe.controls();
@@ -783,13 +781,13 @@
                         const u = d && d.__unit;
                         if (!u) {
                             tooltip.classList.remove('visible');
-                            globe.domElement.style.cursor = 'default';
+                            globeEl.style.cursor = 'default';
                             return;
                         }
                         const flags = u.members.map(teamFlag).join(' ');
                         tooltip.innerHTML = `<span class="flag">${flags}</span> ${u.name}`;
                         tooltip.classList.add('visible');
-                        globe.domElement.style.cursor = 'pointer';
+                        globeEl.style.cursor = 'pointer';
                         positionTooltip(tooltip, event);
                     })
                     .onPolygonClick((d) => {
@@ -968,8 +966,8 @@
                 clearTimeout(window._rotateTimer);
                 window._rotateTimer = setTimeout(() => { controls.autoRotate = true; }, 4000);
             };
-            globe.domElement.addEventListener('mousedown', pause);
-            globe.domElement.addEventListener('touchstart', pause, { passive: true });
+            globeEl.addEventListener('mousedown', pause);
+            globeEl.addEventListener('touchstart', pause, { passive: true });
 
             window.addEventListener('resize', () => {
                 globe.width(window.innerWidth).height(window.innerHeight);
