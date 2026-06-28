@@ -438,6 +438,7 @@
                 name: 'THREE',
                 ready: () => window.THREE,
                 urls: [
+                    'vendor/three.min.js',
                     'https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js',
                     'https://unpkg.com/three@0.128.0/build/three.min.js',
                 ],
@@ -446,6 +447,7 @@
                 name: 'Globe',
                 ready: () => window.Globe,
                 urls: [
+                    'vendor/globe.gl.min.js',
                     'https://cdn.jsdelivr.net/npm/globe.gl@2.24.0/dist/globe.gl.min.js',
                     'https://unpkg.com/globe.gl@2.24.0/dist/globe.gl.min.js',
                 ],
@@ -454,6 +456,7 @@
                 name: 'topojson',
                 ready: () => window.topojson,
                 urls: [
+                    'vendor/topojson-client.min.js',
                     'https://cdn.jsdelivr.net/npm/topojson-client@3.1.0/dist/topojson-client.min.js',
                     'https://unpkg.com/topojson-client@3.1.0/dist/topojson-client.min.js',
                 ],
@@ -655,25 +658,23 @@
         // ============================================================
         //  2.  INIT (called once dependencies are ready)
         // ============================================================
-        let globe, controls;
+        let globe, controls, globeEl;
 
         function init() {
             const container = document.getElementById('globe-container');
 
-            globe = new Globe()
-                .globeImageUrl('https://unpkg.com/three-globe@2.24.8/example/img/earth-blue-marble.jpg')
-                .bumpImageUrl('https://unpkg.com/three-globe@2.24.8/example/img/earth-topology.png')
+            globe = Globe()
+                .globeImageUrl('vendor/img/earth-blue-marble.jpg')
+                .bumpImageUrl('vendor/img/earth-topology.png')
                 .showGlobe(true)
                 .showAtmosphere(true)
                 .atmosphereColor('#3a6ea5')
                 .atmosphereAltitude(0.18)
                 .showGraticules(true)
-                .graticulesColor('rgba(255,255,255,0.06)')
-                .graticulesDashLength(0.5)
-                .graticulesDashGap(0.3)
                 .backgroundColor('rgba(0,0,0,0)');
 
-            container.appendChild(globe.domElement);
+            globe(container);
+            globeEl = container;
 
             // ---- Controls ----
             controls = globe.controls();
@@ -697,7 +698,10 @@
         // ============================================================
         //  3.  LOAD & RENDER POLYGONS
         // ============================================================
-        const DATA_URL = 'https://cdn.jsdelivr.net/npm/world-atlas@2/countries-50m.json';
+        const DATA_URLS = [
+            'vendor/countries-50m.json',
+            'https://cdn.jsdelivr.net/npm/world-atlas@2/countries-50m.json',
+        ];
         const searchIndex = [];        // { unit, lat, lng, terms:[…] }
 
         // Rough centroid of a GeoJSON geometry (average of all vertices).
@@ -715,15 +719,25 @@
         async function loadData() {
             const loadingEl = document.getElementById('loading');
 
-            // Abort if the data CDN hangs, so we never spin forever.
-            const ctrl = new AbortController();
-            const timer = setTimeout(() => ctrl.abort(), 15000);
-
             try {
-                const res = await fetch(DATA_URL, { signal: ctrl.signal });
-                clearTimeout(timer);
-                if (!res.ok) throw new Error(`HTTP ${res.status}`);
-                const topology = await res.json();
+                let topology;
+                let lastErr;
+                for (const url of DATA_URLS) {
+                    // Abort if the data source hangs, so we never spin forever.
+                    const ctrl = new AbortController();
+                    const timer = setTimeout(() => ctrl.abort(), 15000);
+                    try {
+                        const res = await fetch(url, { signal: ctrl.signal });
+                        clearTimeout(timer);
+                        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                        topology = await res.json();
+                        break;
+                    } catch (e) {
+                        clearTimeout(timer);
+                        lastErr = e;
+                    }
+                }
+                if (!topology) throw lastErr || new Error('No data source available');
                 const features = topojson.feature(topology, topology.objects.countries).features;
 
                 // Attach the resolved unit + centroid, and build the search index.
@@ -767,13 +781,13 @@
                         const u = d && d.__unit;
                         if (!u) {
                             tooltip.classList.remove('visible');
-                            globe.domElement.style.cursor = 'default';
+                            globeEl.style.cursor = 'default';
                             return;
                         }
                         const flags = u.members.map(teamFlag).join(' ');
                         tooltip.innerHTML = `<span class="flag">${flags}</span> ${u.name}`;
                         tooltip.classList.add('visible');
-                        globe.domElement.style.cursor = 'pointer';
+                        globeEl.style.cursor = 'pointer';
                         positionTooltip(tooltip, event);
                     })
                     .onPolygonClick((d) => {
@@ -783,7 +797,6 @@
                 loadingEl.classList.add('hidden');
                 console.log(`✅ 2026 World Cup: ${TEAMS.length} nations rendered.`);
             } catch (err) {
-                clearTimeout(timer);
                 console.error('❌ Globe load error:', err);
                 showFatal('Could not load the world map data.');
                 setTimeout(() => { loadingEl.classList.add('hidden'); }, 4000);
@@ -953,8 +966,8 @@
                 clearTimeout(window._rotateTimer);
                 window._rotateTimer = setTimeout(() => { controls.autoRotate = true; }, 4000);
             };
-            globe.domElement.addEventListener('mousedown', pause);
-            globe.domElement.addEventListener('touchstart', pause, { passive: true });
+            globeEl.addEventListener('mousedown', pause);
+            globeEl.addEventListener('touchstart', pause, { passive: true });
 
             window.addEventListener('resize', () => {
                 globe.width(window.innerWidth).height(window.innerHeight);
