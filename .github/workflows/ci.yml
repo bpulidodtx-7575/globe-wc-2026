@@ -1,0 +1,37 @@
+name: CI
+
+# Static HTML + README quality gates for a public docs/site repo with no
+# application build. Delegates to ci-workflows' docs-quality.yml (markdownlint
+# + lychee). Always runs on pull_request so required checks can report a
+# conclusion. Pinned to v1 — see
+# https://github.com/bpulidodtx-7575/ci-workflows.
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  smoke:
+    name: Smoke (index.html present)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Verify index.html exists
+        run: test -f index.html
+
+  docs:
+    uses: bpulidodtx-7575/ci-workflows/.github/workflows/docs-quality.yml@v1
