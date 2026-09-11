@@ -31,14 +31,14 @@ final draw.
 
 ## Controls
 
-| Action            | How                                   |
-| ----------------- | ------------------------------------- |
-| Rotate            | Drag                                  |
-| Zoom              | Scroll / pinch                        |
-| Toggle rotation   | Press **R** or **Space**              |
-| Inspect a nation  | Hover (tooltip) or click (detail card)|
-| Search            | Type a nation, press **Enter**        |
-| Close detail card | **Esc** or the ✕ button               |
+| Action            | How                                    |
+| ----------------- | -------------------------------------- |
+| Rotate            | Drag                                   |
+| Zoom              | Scroll / pinch                         |
+| Toggle rotation   | Press **R** or **Space**               |
+| Inspect a nation  | Hover (tooltip) or click (detail card) |
+| Search            | Type a nation, press **Enter**         |
+| Close detail card | **Esc** or the ✕ button                |
 
 ## Run locally
 
@@ -60,10 +60,9 @@ no build:
 2. Under **Build and deployment**, choose **Deploy from a branch**.
 3. Select the `main` branch and the `/ (root)` folder, then **Save**.
 
-A `.nojekyll` file is included so Pages serves the files as-is.
-
-After Pages is on, the site will be served from this repo's GitHub Pages
-URL (`https://bpulidodtx-7575.github.io/globe-wc-2026/`).
+A `.nojekyll` file is included so Pages serves the files as-is. After
+Pages is enabled, GitHub will publish this repo's Pages site from
+`main`.
 
 ## Data source
 
