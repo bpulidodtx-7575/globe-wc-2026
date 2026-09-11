@@ -1,14 +1,12 @@
 # Config for the docs link-check job (lychee-action auto-loads ./lychee.toml).
 #
-# GitHub Pages for this repo is not enabled yet, so the intended demo / OG
-# absolute github.io URLs in index.html return 404 to anonymous crawlers.
-# Exclude them until Pages is turned on (Settings → Pages → main / root);
-# then remove these excludes so lychee verifies the live site.
+# GitHub Pages for this repo is not enabled yet. Absolute github.io demo/OG
+# URLs were removed from index.html; keep a broad exclude as belt-and-suspenders
+# until Pages is turned on (Settings → Pages → main / root), then drop it.
 
 accept = [200, 429]
 exclude_all_private = true
 
 exclude = [
-  "^https://bpulidodtx-7575\\.github\\.io/globe-wc-2026/?$",
-  "^https://bpulidodtx-7575\\.github\\.io/globe-wc-2026/preview\\.png$",
+  "github\\.io/globe-wc-2026",
 ]
