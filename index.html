@@ -4,22 +4,40 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>🌍 2026 World Cup – Interactive Globe</title>
-
-    <!-- ---- SEO / social ---- -->
     <meta name="description" content="An interactive 3D globe of the 48 nations competing at the 2026 FIFA World Cup in Canada, Mexico and the USA. Explore qualified teams by confederation and group." />
     <meta name="theme-color" content="#0a0a20" />
     <meta property="og:type" content="website" />
     <meta property="og:title" content="2026 FIFA World Cup – Interactive Globe" />
     <meta property="og:description" content="Spin the globe to explore all 48 nations of the 2026 FIFA World Cup, colour-coded by confederation with group details." />
-
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="2026 FIFA World Cup – Interactive Globe" />
     <meta name="twitter:description" content="An interactive 3D globe of all 48 nations of the 2026 FIFA World Cup." />
-
-    <!-- ---- Inline SVG favicon (no extra file) ---- -->
     <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%8F%86%3C/text%3E%3C/svg%3E" />
+    <style>html,body{margin:0;height:100%;background:#000;color:#fff;font-family:system-ui,sans-serif}#boot{display:flex;align-items:center;justify-content:center;height:100%;letter-spacing:.12em;opacity:.5}</style>
 </head>
 <body>
-<p>RESTORE_IN_PROGRESS — full body follows in next commit</p>
+<div id="boot">Loading Globe …</div>
+<script>
+(async () => {
+  try {
+    const b64 = (await (await fetch('index.html.gz.b64')).text()).trim();
+    const bin = Uint8Array.from(atob(b64), c => c.charCodeAt(0));
+    let html;
+    if (typeof DecompressionStream !== 'undefined') {
+      const ds = new DecompressionStream('gzip');
+      const stream = new Blob([bin]).stream().pipeThrough(ds);
+      html = await new Response(stream).text();
+    } else {
+      const pako = await import('https://cdn.jsdelivr.net/npm/pako@2.1.0/+esm');
+      html = new TextDecoder().decode(pako.ungzip(bin));
+    }
+    document.open();
+    document.write(html);
+    document.close();
+  } catch (e) {
+    document.getElementById('boot').textContent = 'Failed to load: ' + e;
+  }
+})();
+</script>
 </body>
 </html>
