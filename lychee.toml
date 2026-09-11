@@ -1,0 +1,12 @@
+# Config for the docs link-check job (lychee-action auto-loads ./lychee.toml).
+#
+# GitHub Pages for this repo is not enabled yet. Absolute github.io demo/OG
+# URLs were removed from index.html; keep a broad exclude as belt-and-suspenders
+# until Pages is turned on (Settings → Pages → main / root), then drop it.
+
+accept = [200, 429]
+exclude_all_private = true
+
+exclude = [
+  "github\\.io/globe-wc-2026",
+]

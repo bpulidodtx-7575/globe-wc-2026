@@ -1,0 +1,35 @@
+name: Security
+
+# Secret scanning plus workflow-file linting. Delegates to ci-workflows'
+# security.yml (gitleaks + actionlint/zizmor). Pinned to v1 — see
+# https://github.com/bpulidodtx-7575/ci-workflows.
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+  schedule:
+    # Weekly, so a scan of the full history catches something a single PR
+    # diff wouldn't.
+    - cron: "49 6 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: security-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  security-checks:
+    # gitleaks-action calls the GitHub API to list the PR's commits — the
+    # called workflow's secrets job requests pull-requests:read for that, but
+    # a caller's workflow-level permissions is the ceiling on what a called
+    # reusable workflow's jobs can be granted, so it has to be re-granted here
+    # too or the request gets capped back to contents:read alone.
+    permissions:
+      contents: read
+      pull-requests: read
+    uses: bpulidodtx-7575/ci-workflows/.github/workflows/security.yml@v1
