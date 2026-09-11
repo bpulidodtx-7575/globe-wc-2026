@@ -1,0 +1,11 @@
+         };
+            globeEl.addEventListener('mousedown', pause);
+            globeEl.addEventListener('touchstart', pause, { passive: true });
+
+            window.addEventListener('resize', () => {
+                globe.width(window.innerWidth).height(window.innerHeight);
+            });
+        }
+    </script>
+</body>
+</html>
