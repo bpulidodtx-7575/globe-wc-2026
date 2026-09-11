@@ -1,0 +1,35 @@
+name: Assemble index
+on:
+  push:
+    branches: [fix/restore-index-html]
+    paths: ['restore-parts/**', '.github/workflows/assemble-index.yml']
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  assemble:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - name: Assemble monolith
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          parts = sorted(Path('restore-parts').glob('part*.txt'), key=lambda p: int(p.stem.replace('part','')))
+          html = ''.join(p.read_text() for p in parts)
+          Path('index.html').write_text(html)
+          print('wrote', len(html), 'from', len(parts), 'parts')
+          assert html.lstrip().startswith('<!DOCTYPE html>')
+          assert "fetch('index.html.gz.b64')" not in html
+          PY
+          rm -rf restore-parts
+          rm -f index.html.gz.b64
+          rm -f .github/workflows/assemble-index.yml
+          rm -f .github/workflows/expand-index.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "fix: restore monolith index.html from assembled parts"
+          git push
