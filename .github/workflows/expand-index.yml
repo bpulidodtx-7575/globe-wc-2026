@@ -1,10 +1,9 @@
-name: expand-index
+name: Expand restored index
 on:
   workflow_dispatch:
   push:
-    paths:
-      - "index.html.gz.b64"
-      - ".github/workflows/expand-index.yml"
+    branches: [fix/restore-index-html]
+    paths: ['index.html.gz.b64', '.github/workflows/expand-index.yml']
 permissions:
   contents: write
 jobs:
@@ -12,20 +11,21 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Expand index.html
+        with:
+          persist-credentials: true
+      - name: Expand monolith index.html
         run: |
           python3 - <<'PY'
           import base64, gzip, pathlib
-          raw = pathlib.Path("index.html.gz.b64").read_text().strip()
-          html = gzip.decompress(base64.b64decode(raw))
+          b64 = pathlib.Path("index.html.gz.b64").read_text().strip()
+          html = gzip.decompress(base64.b64decode(b64))
           pathlib.Path("index.html").write_bytes(html)
-          print("wrote", len(html), "bytes")
+          print("wrote", len(html))
           PY
-      - name: Commit
-        run: |
+          rm -f index.html.gz.b64
+          rm -f .github/workflows/expand-index.yml
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add index.html
-          git diff --cached --quiet && echo "no change" && exit 0
-          git commit -m "fix(ci): remove unpublished GitHub Pages absolute URLs from index.html"
+          git add -A
+          git commit -m "fix: restore monolith index.html from payload" || exit 0
           git push
