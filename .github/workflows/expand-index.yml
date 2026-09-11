@@ -1,0 +1,31 @@
+name: expand-index
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "index.html.gz.b64"
+      - ".github/workflows/expand-index.yml"
+permissions:
+  contents: write
+jobs:
+  expand:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Expand index.html
+        run: |
+          python3 - <<'PY'
+          import base64, gzip, pathlib
+          raw = pathlib.Path("index.html.gz.b64").read_text().strip()
+          html = gzip.decompress(base64.b64decode(raw))
+          pathlib.Path("index.html").write_bytes(html)
+          print("wrote", len(html), "bytes")
+          PY
+      - name: Commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          git diff --cached --quiet && echo "no change" && exit 0
+          git commit -m "fix(ci): remove unpublished GitHub Pages absolute URLs from index.html"
+          git push
